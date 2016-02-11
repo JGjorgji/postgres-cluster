@@ -1,0 +1,7 @@
+---
+packages_root: '~/pgxl-packages/'
+coordinator_port: 5432
+coordinator_pooler_port: 6432
+datanode_port: 7432
+datanode_pooler_port: 8432
+gtm_port: 6666

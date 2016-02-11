@@ -1,0 +1,69 @@
+---
+- hosts: pgxl
+  user: root
+  gather_facts: True
+  vars_files:
+      - vars.yml
+  
+  tasks:
+    - name: Set the hostnames to the ones defined in the inventory file 
+      shell: hostnamectl set-hostname {{ inventory_hostname }}
+      changed_when: False
+
+    - name: Disable firewall, no need in testing
+      service: name=firewalld enabled=no state=stopped
+
+    - name: Copy the files to the vm roots for easy installing
+      copy: src={{ packages_root }} dest=/root/
+
+    - name: List and store packages to be installed later from the root
+      shell: ls /root/postgres*
+      register: packages
+      changed_when: False
+
+    - name: Install all the files in the root dir
+      yum: name={{ item }} state=present
+      with_items: '{{ packages.stdout_lines }}'
+
+    - name: Add the pgxl install path to the system path
+      shell: echo 'export PATH=/usr/postgres-xl-9.2/bin:$PATH' > /etc/profile.d/pgxl.sh
+      # Not idempotent don't notify on changes
+      changed_when: False
+    - shell: chmod +x /etc/profile.d/pgxl.sh
+      changed_when: False
+    
+
+- hosts: gtm
+  user: root
+  become: yes
+  become_user: pgxl
+  gather_facts: True
+  vars_files:
+      - vars.yml
+
+  tasks:
+    - shell: /usr/postgres-xl-9.2/bin/pgxc_ctl create
+    - template: src=templates/pgxc_ctl.conf.j2 dest=/home/pgxl/pgxc_ctl/pgxc_ctl.conf owner=pgxl group=pgxl
+    
+    - stat: path=~/.ssh/id_rsa
+      register: gtm_privkey
+    
+    - shell: ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa -b 1024
+      when: gtm_privkey.stat.exists == False
+    
+    - shell: cat ~/.ssh/id_rsa.pub
+      register: gtm_pubkey
+      changed_when: False
+
+    - template: src=templates/ssh-config dest=~/.ssh/config
+
+- hosts: pgxl
+  user: root
+  become: yes
+  become_user: pgxl
+  gather_facts: True
+    
+  tasks:
+    - name: pgxc_ctl configures the nodes via ssh 
+      authorized_key: user=pgxl key='{{ hostvars.pgxl1.gtm_pubkey.stdout }}' state=present
+
