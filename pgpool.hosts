@@ -1,0 +1,15 @@
+[pgpool]
+pgpool1
+
+[master]
+pgpool2
+
+[slaves]
+pgpool3
+pgpool4
+pgpool5
+pgpool6
+
+[databases:children]
+master
+slaves

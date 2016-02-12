@@ -1,0 +1,61 @@
+# vim:ft=ansible:
+---
+- hosts: all
+  user: root
+  gather_facts: True
+
+  tasks:
+    - shell: hostnamectl set-hostname {{ inventory_hostname }}
+      changed_when: False
+
+    - service: name=firewalld enabled=no state=stopped
+
+    - yum: name=rsync state=present
+
+    - template: src=templates/ssh-config dest=~/.ssh/config
+
+- hosts: databases
+  user: root
+  
+  tasks:
+    - yum: name=postgresql-server state=present
+
+- hosts: master
+  user: root
+  
+  tasks:
+    - stat: path=/var/lib/pgsql/data
+      register: pgdata
+    
+    - shell: postgresql-setup initdb
+      when: pgdata.stat.isdir is not defined and not pgdata.stat.isdir
+
+    - template: src=templates/postgresql.conf.j2 dest=/var/lib/pgsql/data/postgresql.conf
+
+    - template: src=templates/pg_hba.conf.j2 dest=/var/lib/pgsql/data/pg_hba.conf
+   
+    - service: name=postgresql state=restarted
+
+    - shell: psql -U postgres -c "SELECT pg_start_backup('replbackup');"
+
+    - shell: rsync -ra --delete /var/lib/pgsql/data/ root@{{ hostvars[item]['ansible_eth0']['ipv4']['address'] }}:/var/lib/pgsql/data
+      with_items: "{{ groups['slaves'] }}"
+
+    - shell: psql -U postgres -c "SELECT pg_stop_backup();"
+
+- hosts: slaves
+  user: root
+  
+  tasks:
+    - service: name=postgresql state=stopped
+
+    - template: src=templates/postgresql.conf.j2 dest=/var/lib/pgsql/data/postgresql.conf
+
+    - template: src=templates/pg_hba.conf.j2 dest=/var/lib/pgsql/data/pg_hba.conf
+
+    - template: src=templates/recovery.conf.j2 dest=/var/lib/pgsql/data/recovery.conf
+    
+    - shell: restorecon -r /var/lib/pgsql/data
+    
+    - service: name=postgresql state=started
+
