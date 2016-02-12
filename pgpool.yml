@@ -36,6 +36,10 @@
    
     - service: name=postgresql state=restarted
 
+    - shell: psql -U postgres -c "DROP ROLE IF EXISTS pgpool;"
+
+    - shell: psql -U postgres -c "CREATE USER pgpool;"
+
     - shell: psql -U postgres -c "SELECT pg_start_backup('replbackup');"
 
     - shell: rsync -ra --delete /var/lib/pgsql/data/ root@{{ hostvars[item]['ansible_eth0']['ipv4']['address'] }}:/var/lib/pgsql/data
@@ -59,3 +63,16 @@
     
     - service: name=postgresql state=started
 
+- hosts: pgpool
+  user: root
+
+  tasks:
+    - yum: name=epel-release state=present
+
+    - yum: name=postgresql-pgpool-II state=present
+
+    - template: src=templates/pgpool-stream.conf.j2 dest=/etc/pgpool-II/pgpool.conf
+
+    - template: src=templates/pool_hba.conf.j2 dest=/etc/pgpool-II/pool_hba.conf
+
+    - service: name=pgpool enabled=yes state=restarted
