@@ -24,11 +24,11 @@
   user: root
   
   tasks:
-    - stat: path=/var/lib/pgsql/data
+    - stat: path=/var/lib/pgsql/initdb.log
       register: pgdata
     
     - shell: postgresql-setup initdb
-      when: pgdata.stat.isdir is not defined and not pgdata.stat.isdir
+      when: not pgdata.stat.exists
 
     - template: src=templates/postgresql.conf.j2 dest=/var/lib/pgsql/data/postgresql.conf
 
