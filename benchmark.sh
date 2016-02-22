@@ -94,7 +94,7 @@ main () {
     
     # Force needs to always be specified when changing scale factor between runs!!!
     if [ ${FORCE} ]; then
-        ${PSQL} -c "DROP SCHEMA ssb IF EXISTS CASCADE;"
+        ${PSQL} -c "DROP SCHEMA IF EXISTS ssb CASCADE;"
     fi
 
     create_schema_and_tables
@@ -107,3 +107,4 @@ main () {
     exit 0
 }
 
+main
