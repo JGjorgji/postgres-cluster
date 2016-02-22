@@ -101,9 +101,8 @@ main () {
     if [[ ${FORCE} == true ]]; then
         ${PSQL} -c "DROP SCHEMA IF EXISTS ssb CASCADE;"
         create_schema_and_tables
+        load_data
     fi
-
-    load_data
 
     run_all
 
