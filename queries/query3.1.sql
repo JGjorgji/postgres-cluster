@@ -1,5 +1,5 @@
 BEGIN;
-USE SCHEMA 'ssb';
+SET SCHEMA 'ssb';
 select c_nation, s_nation, d_year, sum(lo_revenue)
 as revenue from customer, lineorder, supplier, date
  where lo_custkey = c_custkey

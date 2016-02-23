@@ -1,5 +1,5 @@
 BEGIN;
-USE SCHEMA 'ssb';
+SET SCHEMA 'ssb';
 select d_year, c_nation, sum(lo_revenue -
 lo_supplycost) as profit from date, customer, supplier,
 part, lineorder
