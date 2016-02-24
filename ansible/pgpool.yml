@@ -1,5 +1,20 @@
 # vim:ft=ansible:
 ---
+- hosts: pgpool2
+  user: root
+  gather_facts: True
+
+  tasks:
+    - stat: path=/root/.ssh/id_rsa
+      register: root_privkey
+    
+    - shell: ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa -b 1024
+      when: root_privkey.stat.exists == False
+    
+    - shell: cat /root/.ssh/id_rsa.pub
+      register: root_pubkey
+      changed_when: False
+
 - hosts: all
   user: root
   gather_facts: True
@@ -13,6 +28,8 @@
     - yum: name=rsync state=present
 
     - template: src=templates/ssh-config dest=~/.ssh/config
+
+    - authorized_key: user=root key='{{ hostvars.pgpool2.root_pubkey.stdout }}' state=present
 
 - hosts: databases
   user: root
@@ -42,7 +59,7 @@
 
     - shell: psql -U postgres -c "SELECT pg_start_backup('replbackup');"
 
-    - shell: rsync -ra --delete /var/lib/pgsql/data/ root@{{ hostvars[item]['ansible_eth0']['ipv4']['address'] }}:/var/lib/pgsql/data
+    - shell: rsync -ra --delete /var/lib/pgsql/data/ root@{{ hostvars[item]['ansible_default_ipv4']['address'] }}:/var/lib/pgsql/data
       with_items: "{{ groups['slaves'] }}"
 
     - shell: psql -U postgres -c "SELECT pg_stop_backup();"
