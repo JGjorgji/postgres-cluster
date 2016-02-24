@@ -1,5 +1,6 @@
 BEGIN;
 SET SCHEMA 'ssb';
+EXPLAIN ANALYZE
 select sum(lo_extendedprice*lo_discount) as revenue
  from lineorder, date
  where lo_orderdate = d_datekey

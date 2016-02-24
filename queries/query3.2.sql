@@ -1,5 +1,6 @@
 BEGIN;
 SET SCHEMA 'ssb';
+EXPLAIN ANALYZE
 select c_city, s_city, d_year, sum(lo_revenue) as revenue
 from customer, lineorder, supplier, date
  where lo_custkey = c_custkey

@@ -1,5 +1,6 @@
 BEGIN;
 SET SCHEMA 'ssb';
+EXPLAIN ANALYZE
 select d_year, s_city, p_brand, sum(lo_revenue
 - lo_supplycost) as profit
  from date, customer, supplier, part, lineorder

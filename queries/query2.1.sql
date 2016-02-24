@@ -1,5 +1,6 @@
 BEGIN;
 SET SCHEMA 'ssb';
+EXPLAIN ANALYZE
 select sum(lo_revenue), d_year, p_brand
 from lineorder, date, part, supplier
  where lo_orderdate = d_datekey
