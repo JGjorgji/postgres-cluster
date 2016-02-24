@@ -1,2 +1,2 @@
 standby_mode = on
-primary_conninfo = 'host={{ hostvars[groups["master"][0]]["ansible_eth0"]["ipv4"]["address"] }} port=5432 user=postgres'
+primary_conninfo = 'host={{ hostvars[groups["master"][0]]["ansible_default_ipv4"]["address"] }} port=5432 user=postgres'

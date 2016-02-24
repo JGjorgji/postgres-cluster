@@ -89,7 +89,7 @@ host    all             all             ::1/128                 trust
 #host    replication     postgres        ::1/128                 ident
 {% if ansible_hostname in groups['master'] %}
 {% for host in groups['slaves'] %}
-host    replication postgres     {{ hostvars[host]['ansible_eth0']['ipv4']['address'] }}/24   trust
+host    replication postgres     {{ hostvars[host]['ansible_default_ipv4']['address'] }}/24   trust
 {% endfor %}
 {% endif %}
 

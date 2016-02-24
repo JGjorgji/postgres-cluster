@@ -5,7 +5,7 @@ pgxcInstallDir=$HOME/pgcx
 #gtm and gtmproxy  
 gtmMasterDir=$HOME/pgxc/nodes/gtm
 gtmMasterPort={{ gtm_port }}
-gtmMasterServer={{ hostvars[groups['gtm'][0]]['ansible_eth0']['ipv4']['address'] }}
+gtmMasterServer={{ hostvars[groups['gtm'][0]]['ansible_default_ipv4']['ipv4']['address'] }}
 gtmSlave=n
 
 #gtm proxy  
@@ -19,7 +19,7 @@ coordPorts=({% for i in groups['coordinator'] %} {{ count }} {% set count = coun
 {% set count = coordinator_pooler_port %}
 poolerPorts=({% for i in groups['coordinator'] %} {{ count }} {% set count = count + 1 %} {% endfor %})
 coordPgHbaEntries=(192.168.100.0/24)
-coordMasterServers=({% for host in groups['coordinator'] %} {{ hostvars[host]['ansible_eth0']['ipv4']['address'] }} {% endfor %})
+coordMasterServers=({% for host in groups['coordinator'] %} {{ hostvars[host]['ansible_default_ipv4']['ipv4']['address'] }} {% endfor %})
 coordMasterDirs=({% for i in groups['coordinator'] %} $coordMasterDir/coord{{ loop.index }} {% endfor %})
 coordMaxWALSender=0
 coordMaxWALSenders=({% for i in groups['coordinator'] %} $coordMaxWALSenders {% endfor %})
@@ -35,7 +35,7 @@ datanodePorts=({% for i in groups['datanode'] %} {{ count }} {% set count = coun
 {% set count = datanode_pooler_port %}
 datanodePoolerPorts=({% for i in groups['datanode'] %} {{ count }} {% set count = count + 1 %} {% endfor %})
 datanodePgHbaEntries=(192.168.100.0/24)
-datanodeMasterServers=({% for host in groups['datanode'] %} {{ hostvars[host]['ansible_eth0']['ipv4']['address'] }} {% endfor %})
+datanodeMasterServers=({% for host in groups['datanode'] %} {{ hostvars[host]['ansible_default_ipv4']['ipv4']['address'] }} {% endfor %})
 datanodeMasterDir=$HOME/pgxc/nodes/dn_master
 datanodeMasterDirs=({% for i in groups['datanode'] %} $datanodeMasterDir/datanode{{ loop.index }} {% endfor %})
 datanodeMaxWALSender=0
