@@ -46,7 +46,7 @@ generate_data () {
     pushd ${DBGEN_LOCATION}
     # Only generate the 
     if [[ ${FORCE} == true ]]; then
-        rm *.tbl
+        rm -f *.tbl
         ./dbgen -s "${SCALE_FACTOR}" -T a -f
     fi
 
