@@ -44,25 +44,13 @@ PSQL="$(which psql) -U ${USER} -h ${HOST}"
 
 generate_data () {
     pushd ${DBGEN_LOCATION}
-    # Only generate the 
+    # If -f is provided we regenerate all the data
+    # since we don't know what the previous scale factor was
     if [[ ${FORCE} == true ]]; then
         rm -f *.tbl
         ./dbgen -s "${SCALE_FACTOR}" -T a -f
     fi
-
-    # Now we need to remove the last delimiter so postgres can import the data
-    for file in *.tbl; do
-        # Check if the file has been processed once
-        firstline=$(head -n 1 "${file}")
-        # Intentional whitespace in the below line
-        if [[ "${firstline: -1}" != '|' ]]; then
-            echo "EXECUTING CONTINUE"
-            continue
-        fi
-        sed -i 's/|$//' ${file}
-    done
     popd
-    # Data should now be nicely formatted for import
 }
 
 create_schema_and_tables () {
