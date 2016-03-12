@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /usr/bin/env bash
 
 set -o pipefail
 set -o nounset
@@ -93,7 +93,7 @@ main () {
         load_data
     fi
     if [[ ! -d "${RESULTDIR}" ]]; then
-        mkdir -p "${$RESULTDIR}"
+        mkdir -p "${RESULTDIR}"
     fi
     
     RESULTDIR="${RESULTDIR}/$(date +'%d-%m-%Y-%H-%M')"
