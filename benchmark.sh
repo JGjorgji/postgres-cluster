@@ -73,7 +73,7 @@ vaccum_db () {
 
 run_query () {
     QUERY_LOCATION=${1}
-    { time ${PSQL} < ${QUERY_LOCATION} ;} > "${RESULTDIR}/$(basename ${QUERY_LOCATION})"
+    { time ${PSQL} < ${QUERY_LOCATION} ;} > "${RESULTDIR}/$(basename ${QUERY_LOCATION})" 2> "${RESULTDIR}/$(basename ${QUERY_LOCATION}).time"
 }
 
 run_all () {
