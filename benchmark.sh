@@ -10,13 +10,14 @@ QUERY_MODE="sequential"
 CACHE_MODE="both"
 HOST=
 USER="postgres"
+PORT=
 
 if [[ -z ${DBGEN_LOCATION} ]]; then
     echo "Need to specify DBGEN_LOCATION env variable"
     exit 1
 fi
 
-while getopts "s:q:c:h:f" opt; do
+while getopts "s:q:c:h:fp:" opt; do
     case ${opt} in
         s)
             SCALE_FACTOR=${OPTARG}
@@ -33,6 +34,9 @@ while getopts "s:q:c:h:f" opt; do
         h)
             HOST=${OPTARG}
             ;;
+        p)
+            PORT=${OPTARG}
+            ;;
         *)
             echo "Unknown command line option"
             exit 1
@@ -40,7 +44,7 @@ while getopts "s:q:c:h:f" opt; do
     esac
 done
 
-PSQL="$(which psql) -U ${USER} -h ${HOST}"
+PSQL="$(which psql) -U ${USER} -h ${HOST} -p ${PORT}"
 
 generate_data () {
     pushd ${DBGEN_LOCATION}
