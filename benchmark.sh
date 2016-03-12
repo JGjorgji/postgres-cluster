@@ -10,7 +10,6 @@ QUERY_MODE="sequential"
 CACHE_MODE="both"
 HOST=
 USER="postgres"
-RESULTDIR=
 
 if [[ -z ${DBGEN_LOCATION} ]]; then
     echo "Need to specify DBGEN_LOCATION env variable"
@@ -74,7 +73,7 @@ vaccum_db () {
 
 run_query () {
     QUERY_LOCATION=${1}
-    { time ${PSQL} < ${QUERY_LOCATION} ;} > "${RESULTDIR}/${QUERY_LOCATION}"
+    { time ${PSQL} < ${QUERY_LOCATION} ;} > "${RESULTDIR}/$(basename ${QUERY_LOCATION})"
 }
 
 run_all () {
@@ -96,14 +95,14 @@ main () {
         mkdir -p "${RESULTDIR}"
     fi
     
-    RESULTDIR="${RESULTDIR}/$(date +'%d-%m-%Y-%H-%M')"
+    RESULTDIR="${RESULTDIR}/${HOST}-${SCALE_FACTOR}"
     mkdir ${RESULTDIR}
 
-    echo date > "${RESULTDIR}/started"
+    echo $(date) > "${RESULTDIR}/started"
 
     run_all
 
-    echo date > "${RESULTDIR}/finished"
+    echo $(date) > "${RESULTDIR}/finished"
     exit 0
 }
 
