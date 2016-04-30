@@ -104,25 +104,25 @@ main () {
 
     echo $(date) > "${RESULTDIR}/started"
     
-
-    remotes=()
-
+    # Start collectl on all nodes
     while $IFS= read -r node
     do
-        ssh -t root@"${node}" "collectl --all > collectl.output" &
-        remotes+=("$!")
-    done < "~/hosts"
+        ssh root@"${node}" "collectl --all > collectl.output &"
+    done < "/root/hosts"
 
     run_all
     
-    for host in remotes; do
-        kill host
-    done
-
+    # Stop collectl
+    while $IFS= read -r node
+    do
+        ssh root@"${node}" "pkill collectl"
+    done < "/root/hosts"   
+    
+    # Get the results to the control node
     while $IFS= read -r node
     do
         scp root@"${node}:/root/collectl.output" "${RESULTDIR}/${node}.collectl.output"
-    done < "~/hosts"
+    done < "/root/hosts"
 
 
     echo $(date) > "${RESULTDIR}/finished"
