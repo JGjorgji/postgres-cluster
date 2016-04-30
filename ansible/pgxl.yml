@@ -33,6 +33,8 @@
     - shell: chmod +x /etc/profile.d/pgxl.sh
       changed_when: False
     
+    - yum: name-collectl state=present
+    
 
 - hosts: gtm
   user: root
