@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /usr/bin/env bash
 
 set -o pipefail
 set -o nounset
@@ -10,13 +10,14 @@ QUERY_MODE="sequential"
 CACHE_MODE="both"
 HOST=
 USER="postgres"
+PORT=
 
 if [[ -z ${DBGEN_LOCATION} ]]; then
     echo "Need to specify DBGEN_LOCATION env variable"
     exit 1
 fi
 
-while getopts "s:q:c:h:f" opt; do
+while getopts "s:q:c:h:fp:" opt; do
     case ${opt} in
         s)
             SCALE_FACTOR=${OPTARG}
@@ -33,6 +34,9 @@ while getopts "s:q:c:h:f" opt; do
         h)
             HOST=${OPTARG}
             ;;
+        p)
+            PORT=${OPTARG}
+            ;;
         *)
             echo "Unknown command line option"
             exit 1
@@ -40,7 +44,7 @@ while getopts "s:q:c:h:f" opt; do
     esac
 done
 
-PSQL="$(which psql) -U ${USER} -h ${HOST}"
+PSQL="$(which psql) -U ${USER} -h ${HOST} -p ${PORT}"
 
 generate_data () {
     pushd ${DBGEN_LOCATION}
@@ -73,7 +77,7 @@ vaccum_db () {
 
 run_query () {
     QUERY_LOCATION=${1}
-    time ${PSQL} < ${QUERY_LOCATION}
+    { time ${PSQL} < ${QUERY_LOCATION} ;} > "${RESULTDIR}/$(basename ${QUERY_LOCATION})" 2> "${RESULTDIR}/$(basename ${QUERY_LOCATION}).time"
 }
 
 run_all () {
@@ -91,10 +95,18 @@ main () {
         create_schema_and_tables
         load_data
     fi
+    if [[ ! -d "${RESULTDIR}" ]]; then
+        mkdir -p "${RESULTDIR}"
+    fi
+    
+    RESULTDIR="${RESULTDIR}/${HOST}-${SCALE_FACTOR}"
+    mkdir ${RESULTDIR}
+
+    echo $(date) > "${RESULTDIR}/started"
 
     run_all
 
-    echo "Finished at $(date)"
+    echo $(date) > "${RESULTDIR}/finished"
     exit 0
 }
 

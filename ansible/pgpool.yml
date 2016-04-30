@@ -94,4 +94,6 @@
 
     - template: src=templates/pool_hba.conf.j2 dest=/etc/pgpool-II/pool_hba.conf
 
+    - file: path=/tmp/pgpool state=directory
+
     - service: name=pgpool enabled=yes state=restarted
