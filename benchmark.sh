@@ -105,7 +105,7 @@ main () {
     echo $(date) > "${RESULTDIR}/started"
     
     # Start collectl on all nodes
-    while $IFS= read -r node
+    while IFS= read -r node
     do
         ssh root@"${node}" "collectl --all > collectl.output &"
     done < "/root/hosts"
@@ -113,13 +113,13 @@ main () {
     run_all
     
     # Stop collectl
-    while $IFS= read -r node
+    while IFS= read -r node
     do
         ssh root@"${node}" "pkill collectl"
     done < "/root/hosts"   
     
     # Get the results to the control node
-    while $IFS= read -r node
+    while IFS= read -r node
     do
         scp root@"${node}:/root/collectl.output" "${RESULTDIR}/${node}.collectl.output"
     done < "/root/hosts"
