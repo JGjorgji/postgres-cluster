@@ -103,8 +103,14 @@ main () {
     mkdir ${RESULTDIR}
 
     echo $(date) > "${RESULTDIR}/started"
+    
+    collectl --all > "${RESULTDIR}/collectl.output" &
+    
+    collectl_pid=$!
 
     run_all
+    
+    kill "${collectl_pid}"
 
     echo $(date) > "${RESULTDIR}/finished"
     exit 0
