@@ -94,7 +94,7 @@
       shell: restorecon -r /var/lib/pgsql/9.5/data
 
     - name: Restore file permissions
-      file: path=/var/lib/pgsql/9.5/data owner=postgres group=postgres recurse=yes
+      file: path=/var/lib/pgsql/9.5/data owner=postgres group=postgres recurse=yes mode=0700
     
     - name: Now we can start the slaves
       service: name=postgresql-9.5 state=started enabled=yes
