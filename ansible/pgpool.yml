@@ -32,6 +32,9 @@
 
     - authorized_key: user=root key="{{ lookup('env', ssh_pubkey)}}" state=present
 
+    - name: Disable ipv6 in localhost
+      lineinfile: dest=/etc/hosts regexp="^::1.*" state=absent
+
 - hosts: master
   user: root
   
