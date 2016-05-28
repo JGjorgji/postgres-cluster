@@ -64,7 +64,7 @@
       file: path=/tmp/initial-pgdata state=directory
 
     - name: Dump the database
-      shell: pg_basebackup -D /tmp/initial-pgdata
+      shell: pg_basebackup -D /tmp/initial-pgdata -h localhost -U postgres
 
     - name: Initially sync the base data so replication can work
       shell: rsync -ra --delete /tmp/initial-pgdata/ root@{{ hostvars[item]['ansible_default_ipv4']['address'] }}:/var/lib/pgsql/9.5/data
