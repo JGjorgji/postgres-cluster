@@ -108,7 +108,7 @@
       yum: name=pgpool-II-95 state=present
 
     - name: Main pgpool conf file
-      template: src=templates/pgpool-stream.conf.j2 dest=/etc/pgpool-II-95/pgpool.conf
+      template: src=templates/pgpool.conf.j2 dest=/etc/pgpool-II-95/pgpool.conf
 
     - name: pgpool hba conf
       template: src=templates/pool_hba.conf.j2 dest=/etc/pgpool-II-95/pool_hba.conf
