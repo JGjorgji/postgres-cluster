@@ -96,3 +96,4 @@ host    replication postgres     {{ hostvars[host]['ansible_default_ipv4']['addr
 host    all         pgpool      0.0.0.0/0      trust
 host    all         all         0.0.0.0/0      trust
 host    all         postgres    0.0.0.0/0      trust
+host    replication postgres    127.0.0.1/32    trust
