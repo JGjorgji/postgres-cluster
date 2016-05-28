@@ -1,99 +1,105 @@
 # vim:ft=ansible:
----
-- hosts: pgpool2
-  user: root
-  gather_facts: True
-
-  tasks:
-    - stat: path=/root/.ssh/id_rsa
-      register: root_privkey
-    
-    - shell: ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa -b 1024
-      when: root_privkey.stat.exists == False
-    
-    - shell: cat /root/.ssh/id_rsa.pub
-      register: root_pubkey
-      changed_when: False
-
-    - yum: name=collectl state=present
-
 - hosts: all
   user: root
   gather_facts: True
+  vars:
+    ssh_privkey: "{{ lookup('env', 'SSH_PRIVKEY') }}"
+    ssh_pubkey: "{{ lookup('env', 'SSH_PUBKEY') }}"
 
   tasks:
+    - name: Enable the postgres 9.5 repo
+      yum: name=https://download.postgresql.org/pub/repos/yum/9.5/redhat/rhel-7-x86_64/pgdg-centos95-9.5-2.noarch.rpm state=present
+
     - shell: hostnamectl set-hostname {{ inventory_hostname }}
-      changed_when: False
 
-    - service: name=firewalld enabled=no state=stopped
+    - name: Disable firewalld we don't need it in testing
+      service: name=firewalld enabled=no state=stopped
 
-    - yum: name=rsync state=present
+    - name: Needed utilities and postgres
+      yum: name={{ item }} state=present
+      with_items:
+        - epel-release
+        - rsync
+        - collectl
+        - vim
+        - tmux
+        - postgresql95
+        - postgresql95-server
+        - postgresql95-contrib
 
-    - template: src=templates/ssh-config dest=~/.ssh/config
+    - name: Ignore host keys, again, testing...
+      template: src=templates/ssh-config dest=/root/.ssh/config
 
-    - authorized_key: user=root key='{{ hostvars.pgpool2.root_pubkey.stdout }}' state=present
-
-- hosts: databases
-  user: root
-  
-  tasks:
-    - yum: name=postgresql-server state=present
+    - authorized_key: user=root key="{{ lookup('env', ssh_pubkey)}}" state=present
 
 - hosts: master
   user: root
   
   tasks:
-    - stat: path=/var/lib/pgsql/initdb.log
-      register: pgdata
+    - name: Stop and disable the database for configuration and intial replication sync
+      service: name=postgresql-9.5 state=stopped enabled=no
+
+    - name: Delete the data folder if it exists
+      file: path=/var/lib/pgsql/9.5/data state=absent
     
-    - shell: postgresql-setup initdb
-      when: not pgdata.stat.exists
+    - name: Initialize the db
+      shell: /usr/pgsql-9.5/bin/postgresql95-setup initdb
 
-    - template: src=templates/postgresql.conf.j2 dest=/var/lib/pgsql/data/postgresql.conf
+    - name: postgres config
+      template: src=templates/postgresql.conf.j2 dest=/var/lib/pgsql/9.5/data/postgresql.conf
 
-    - template: src=templates/pg_hba.conf.j2 dest=/var/lib/pgsql/data/pg_hba.conf
-   
-    - service: name=postgresql state=restarted
+    - name: pg_hba config
+      template: src=templates/pg_hba.conf.j2 dest=/var/lib/pgsql/data/pg_hba.conf
 
-    - shell: psql -U postgres -c "DROP ROLE IF EXISTS pgpool;"
+    - name: Delete pgpool so we can add it again because IF NOT EXISTS doesn't support CREATE USER
+      shell: psql -U postgres -c "DROP ROLE IF EXISTS pgpool;"
 
-    - shell: psql -U postgres -c "CREATE USER pgpool;"
+    - name: Create the pgpool user
+      shell: psql -U postgres -c "CREATE USER pgpool;"
 
-    - shell: psql -U postgres -c "SELECT pg_start_backup('replbackup');"
-
-    - shell: rsync -ra --delete /var/lib/pgsql/data/ root@{{ hostvars[item]['ansible_default_ipv4']['address'] }}:/var/lib/pgsql/data
+    - name: Initially sync the base data so replication can work
+      shell: rsync -ra --delete /var/lib/pgsql/9.5/data/ root@{{ hostvars[item]['ansible_default_ipv4']['address'] }}:/var/lib/pgsql/9.5/data
       with_items: "{{ groups['slaves'] }}"
 
-    - shell: psql -U postgres -c "SELECT pg_stop_backup();"
+    - name: Now we can start and enable the master database
+      service: name=postgresql-9.5 state=started enabled=yes
 
 - hosts: slaves
   user: root
+  gather_facts: True
   
   tasks:
-    - service: name=postgresql state=stopped
+    - name: Stop the db before configuring just in case it's been started
+      service: name=postgresql state=stopped enabled=no
 
-    - template: src=templates/postgresql.conf.j2 dest=/var/lib/pgsql/data/postgresql.conf
+    - name: Copy postgres conf
+      template: src=templates/postgresql.conf.j2 dest=/var/lib/pgsql/9.5/data/postgresql.conf
 
-    - template: src=templates/pg_hba.conf.j2 dest=/var/lib/pgsql/data/pg_hba.conf
+    - name: pg_hba conf
+      template: src=templates/pg_hba.conf.j2 dest=/var/lib/pgsql/9.5/data/pg_hba.conf
 
-    - template: src=templates/recovery.conf.j2 dest=/var/lib/pgsql/data/recovery.conf
+    - name: recovery conf
+      template: src=templates/recovery.conf.j2 dest=/var/lib/pgsql/9.5/data/recovery.conf
     
-    - shell: restorecon -r /var/lib/pgsql/data
+    - name: Restore selinux tags after the data has been copied from the masters
+      shell: restorecon -r /var/lib/pgsql/9.5/data
     
-    - service: name=postgresql state=started
+    - name: Now we can start the slaves
+      service: name=postgresql state=started enabled=yes
 
 - hosts: pgpool
   user: root
+  gather_facts: True
 
   tasks:
-    - yum: name=epel-release state=present
+    - name: Install pgpool
+      yum: name=pgpool-II-95 state=present
 
-    - yum: name=postgresql-pgpool-II state=present
+    - name: Main pgpool conf file
+      template: src=templates/pgpool-stream.conf.j2 dest=/etc/pgpool-II-95/pgpool.conf
 
-    - template: src=templates/pgpool-stream.conf.j2 dest=/etc/pgpool-II/pgpool.conf
+    - name: pgpool hba conf
+      template: src=templates/pool_hba.conf.j2 dest=/etc/pgpool-II-95/pool_hba.conf
 
-    - template: src=templates/pool_hba.conf.j2 dest=/etc/pgpool-II/pool_hba.conf
-
-    - file: path=/tmp/pgpool state=directory
-
-    - service: name=pgpool enabled=yes state=restarted
+    - name: Start and enable pgpool
+      service: name=pgpool state=started enabled=yes
