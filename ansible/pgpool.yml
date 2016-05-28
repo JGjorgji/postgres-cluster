@@ -114,4 +114,4 @@
       template: src=templates/pool_hba.conf.j2 dest=/etc/pgpool-II-95/pool_hba.conf
 
     - name: Start and enable pgpool
-      service: name=pgpool state=started enabled=yes
+      service: name=pgpool-II-95 state=started enabled=yes
