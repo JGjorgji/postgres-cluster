@@ -49,7 +49,7 @@
       template: src=templates/postgresql.conf.j2 dest=/var/lib/pgsql/9.5/data/postgresql.conf
 
     - name: pg_hba config
-      template: src=templates/pg_hba.conf.j2 dest=/var/lib/pgsql/data/pg_hba.conf
+      template: src=templates/pg_hba.conf.j2 dest=/var/lib/pgsql/9.5/data/pg_hba.conf
 
     - name: Delete pgpool so we can add it again because IF NOT EXISTS doesn't support CREATE USER
       shell: psql -U postgres -c "DROP ROLE IF EXISTS pgpool;"
