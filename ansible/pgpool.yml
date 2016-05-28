@@ -70,7 +70,7 @@
   
   tasks:
     - name: Stop the db before configuring just in case it's been started
-      service: name=postgresql state=stopped enabled=no
+      service: name=postgresql-9.5 state=stopped enabled=no
 
     - name: Copy postgres conf
       template: src=templates/postgresql.conf.j2 dest=/var/lib/pgsql/9.5/data/postgresql.conf
@@ -85,7 +85,7 @@
       shell: restorecon -r /var/lib/pgsql/9.5/data
     
     - name: Now we can start the slaves
-      service: name=postgresql state=started enabled=yes
+      service: name=postgresql-9.5 state=started enabled=yes
 
 - hosts: pgpool
   user: root
