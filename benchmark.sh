@@ -121,7 +121,7 @@ main () {
     # Get the results to the control node
     while IFS= read -r node
     do
-        scp -n root@"${node}:/root/collectl.output" "${RESULTDIR}/${node}-${SCALE_FACTOR}.collectl.output"
+        scp root@"${node}:/root/collectl.output" "${RESULTDIR}/${node}-${SCALE_FACTOR}.collectl.output"
     done < "/root/hosts"
 
 
