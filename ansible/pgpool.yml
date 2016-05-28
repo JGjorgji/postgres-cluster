@@ -7,6 +7,8 @@
     ssh_pubkey: "{{ lookup('env', 'SSH_PUBKEY') }}"
 
   tasks:
+    - name: Enable epel
+      yum: name=epel-release state=present
     - name: Enable the postgres 9.5 repo
       yum: name=https://download.postgresql.org/pub/repos/yum/9.5/redhat/rhel-7-x86_64/pgdg-centos95-9.5-2.noarch.rpm state=present
 
@@ -18,7 +20,6 @@
     - name: Needed utilities and postgres
       yum: name={{ item }} state=present
       with_items:
-        - epel-release
         - rsync
         - collectl
         - vim
@@ -66,8 +67,11 @@
     - name: Create temp dir
       file: path=/tmp/initial-pgdata state=directory
 
+    - name: The dump script needs the target empty
+      file: path=/tmp/initial-pgdata state=absent
+
     - name: Dump the database
-      shell: pg_basebackup -D /tmp/initial-pgdata -h localhost -U postgres
+      shell: pg_basebackup -D /tmp/initial-pgdata -h "{{ hostvars[groups['master'][0]]['ansible_default_ipv4']['address'] }}" -U postgres
 
     - name: Initially sync the base data so replication can work
       shell: rsync -ra --delete /tmp/initial-pgdata/ root@{{ hostvars[item]['ansible_default_ipv4']['address'] }}:/var/lib/pgsql/9.5/data

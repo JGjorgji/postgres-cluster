@@ -92,8 +92,5 @@ host    all             all             ::1/128                 trust
 host    replication postgres     {{ hostvars[host]['ansible_default_ipv4']['address'] }}/24   trust
 {% endfor %}
 {% endif %}
-
-host    all         pgpool      0.0.0.0/0      trust
-host    all         all         0.0.0.0/0      trust
-host    all         postgres    0.0.0.0/0      trust
-host    replication postgres    127.0.0.1/32    trust
+host    all         postgres    {{ hostvars[groups['pgpool'][0]]['ansible_default_ipv4']['address'] }}/24   trust
+host    replication         postgres    {{ hostvars[groups['master'][0]]['ansible_default_ipv4']['address'] }}/24   trust
