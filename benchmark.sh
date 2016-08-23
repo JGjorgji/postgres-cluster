@@ -95,10 +95,10 @@ main () {
         create_schema_and_tables
         load_data
     fi
-    if [[ ! -d "${RESULTDIR}" ]]; then
-        mkdir -p "${RESULTDIR}"
-    fi
     
+    rm -rf "${RESULTDIR}"
+    mkdir -p "${RESULTDIR}"
+        
     RESULTDIR="${RESULTDIR}/${HOST}-${SCALE_FACTOR}"
     mkdir ${RESULTDIR}
 
@@ -108,7 +108,7 @@ main () {
     while IFS= read -r node
     do
         ssh -n root@"${node}" "collectl --all > /root/collectl.output &"
-    done < "/root/hosts"
+    done < "${ANSIBLE_HOSTS}"
 
     run_all
     
@@ -116,13 +116,13 @@ main () {
     while IFS= read -r node
     do
         ssh -n root@"${node}" "pkill collectl"
-    done < "/root/hosts"   
+    done < "${ANSIBLE_HOSTS}"   
     
     # Get the results to the control node
     while IFS= read -r node
     do
         scp root@"${node}:/root/collectl.output" "${RESULTDIR}/${node}-${SCALE_FACTOR}.collectl.output"
-    done < "/root/hosts"
+    done < "${ANSIBLE_HOSTS}"
 
 
     echo $(date) > "${RESULTDIR}/finished"
