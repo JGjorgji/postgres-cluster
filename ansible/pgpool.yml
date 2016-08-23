@@ -58,12 +58,6 @@
     - name: Now we can start and enable the master database
       service: name=postgresql-9.5 state=started enabled=yes
 
-    - name: Delete pgpool so we can add it again because IF NOT EXISTS doesn't support CREATE USER
-      shell: psql -U postgres -c "DROP ROLE IF EXISTS pgpool;"
-
-    - name: Create the pgpool user
-      shell: psql -U postgres -c "CREATE USER pgpool;"
-
     - name: Create temp dir
       file: path=/tmp/initial-pgdata state=directory
 
@@ -76,6 +70,9 @@
     - name: Initially sync the base data so replication can work
       shell: rsync -ra --delete /tmp/initial-pgdata/ root@{{ hostvars[item]['ansible_default_ipv4']['address'] }}:/var/lib/pgsql/9.5/data
       with_items: "{{ groups['slaves'] }}"
+
+    - name: Remove temp dump
+      file: path=/tmp/intial-pgdata state=absent
 
 - hosts: slaves
   user: root
@@ -117,5 +114,9 @@
     - name: pgpool hba conf
       template: src=templates/pool_hba.conf.j2 dest=/etc/pgpool-II-95/pool_hba.conf
 
+    - name: Create folder for pidfile
+      file: path=/var/run/pgpool state=directory
+
     - name: Start and enable pgpool
       service: name=pgpool-II-95 state=started enabled=yes
+
