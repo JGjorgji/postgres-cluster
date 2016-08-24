@@ -35,6 +35,12 @@
 
     - name: Disable ipv6 in localhost
       lineinfile: dest=/etc/hosts regexp="^::1.*" state=absent
+    
+    - name: Create pg directory
+      file: path=/var/lib/pgsql/9.5/data state=directory
+
+    - name: selinux stuff
+      command: restorecon /var/lib/pgsql/9.5/data
 
 - hosts: master
   user: root
@@ -110,6 +116,8 @@
 
     - name: Main pgpool conf file
       template: src=templates/pgpool.conf.j2 dest=/etc/pgpool-II-95/pgpool.conf
+
+    - include_vars: "{{ lookup('env', 'ALLOWED_HOSTS') }}"
 
     - name: pgpool hba conf
       template: src=templates/pool_hba.conf.j2 dest=/etc/pgpool-II-95/pool_hba.conf
