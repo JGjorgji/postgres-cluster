@@ -96,34 +96,29 @@ main () {
         load_data
     fi
     
-    rm -rf "${RESULTDIR}"
-    mkdir -p "${RESULTDIR}"
+    # Always have the basedir present
+    if [[ ! -d "${RESULTDIR}" ]]; then
+        mkdir -p "${RESULTDIR}"
+    fi
         
     RESULTDIR="${RESULTDIR}/${HOST}-${SCALE_FACTOR}"
-    mkdir ${RESULTDIR}
+    
+    # Wipe per scale factor results on rerun
+    rm -rf "${RESULTDIR}"
+    mkdir -p "${RESULTDIR}"
 
     echo $(date) > "${RESULTDIR}/started"
     
     # Start collectl on all nodes
-    while IFS= read -r node
-    do
-        ssh -n root@"${node}" "collectl --all > /root/collectl.output &"
-    done < "${ANSIBLE_HOSTS}"
+    ansible all -m shell -a "nohup collectl --all > /root/{{ inventory_hostname }}.collectl &" -u root
 
     run_all
     
     # Stop collectl
-    while IFS= read -r node
-    do
-        ssh -n root@"${node}" "pkill collectl"
-    done < "${ANSIBLE_HOSTS}"   
+    ansible all -m shell -a "pkill collectl" -u root
     
     # Get the results to the control node
-    while IFS= read -r node
-    do
-        scp root@"${node}:/root/collectl.output" "${RESULTDIR}/${node}-${SCALE_FACTOR}.collectl.output"
-    done < "${ANSIBLE_HOSTS}"
-
+    ansible all -m fetch -a "src=/root/{{ inventory_hostname }}.collectl dest=${RESULTDIR} flat=yes" -u root
 
     echo $(date) > "${RESULTDIR}/finished"
     exit 0

@@ -22,6 +22,7 @@
       with_items:
         - rsync
         - collectl
+        - pciutils
         - vim
         - tmux
         - postgresql95
