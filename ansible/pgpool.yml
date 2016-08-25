@@ -9,10 +9,12 @@
   tasks:
     - name: Enable epel
       yum: name=epel-release state=present
+
     - name: Enable the postgres 9.5 repo
       yum: name=https://download.postgresql.org/pub/repos/yum/9.5/redhat/rhel-7-x86_64/pgdg-centos95-9.5-2.noarch.rpm state=present
 
-    - shell: hostnamectl set-hostname {{ inventory_hostname }}
+    - name: Set hostname
+      command: hostnamectl set-hostname {{ inventory_hostname }}
 
     - name: Disable firewalld we don't need it in testing
       service: name=firewalld enabled=no state=stopped
@@ -30,9 +32,10 @@
         - postgresql95-contrib
 
     - name: Ignore host keys, again, testing...
-      template: src=templates/ssh-config dest=/root/.ssh/config
+      copy: src=files/ssh-config dest=/root/.ssh/config
 
-    - authorized_key: user=root key="{{ lookup('env', ssh_pubkey)}}" state=present
+    - name: Authorize key for all computers
+      authorized_key: user=root key="{{ lookup('file', ssh_pubkey) }}" state=present
 
     - name: Disable ipv6 in localhost
       lineinfile: dest=/etc/hosts regexp="^::1.*" state=absent
@@ -42,11 +45,26 @@
 
     - name: selinux stuff
       command: restorecon /var/lib/pgsql/9.5/data
+        
+    - name: Some form of SSH security just in case
+      lineinfile: dest=/etc/ssh/sshd_config line="PasswordAuthentication no"
+
+    - name: Reload sshd for new settings 
+      service: name=sshd state=restarted
 
 - hosts: master
   user: root
-  
+  vars:
+    ssh_privkey: "{{ lookup('env', 'SSH_PRIVKEY') }}"
+    ssh_pubkey: "{{ lookup('env', 'SSH_PUBKEY') }}"
+
   tasks:
+    - name: Copy private key so rsync can work
+      copy: src="{{ ssh_privkey }}" dest=/root/.ssh/ mode="0600"
+
+    - name: selinux on ssh keys
+      command: restorecon -R /root/.ssh
+
     - name: Stop and disable the database for configuration
       service: name=postgresql-9.5 state=stopped enabled=no
 
